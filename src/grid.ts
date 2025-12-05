@@ -1,8 +1,41 @@
 type Position = { x: number; y: number };
 type Cell = Position & { value: string };
 
+class GridIterator {
+  private x = -1;
+  private y = 0;
+  private done = false;
+  private readonly grid: Grid;
+
+  constructor(grid: Grid) {
+    this.grid = grid;
+  }
+
+  next() {
+    this.x++;
+    const rows = this.grid.grid.length;
+    const cols = this.grid.grid[0].length;
+
+    if (this.x === cols && this.y === rows - 1) {
+      this.done = true;
+    } else if (this.x > cols - 1) {
+      this.x = 0;
+      this.y++;
+    }
+
+    return {
+      done: this.done,
+      value: {
+        x: this.x,
+        y: this.y,
+      },
+    };
+  }
+}
+
 export class Grid {
-  private readonly grid: string[];
+  readonly grid: string[];
+
   constructor(grid: string[]) {
     this.grid = grid;
   }
@@ -31,37 +64,6 @@ export class Grid {
   }
 
   [Symbol.iterator]() {
-    const rows = this.grid.length;
-    const cols = this.grid[0].length;
-    return {
-      current: { x: -1, y: 0 },
-      next() {
-        this.current.x++;
-
-        if (this.current.x === cols && this.current.y === rows - 1) {
-          return {
-            done: true,
-            // unreachable placeholder for type consistency
-            value: {
-              x: Infinity,
-              y: Infinity,
-            },
-          };
-        }
-
-        if (this.current.x > cols - 1) {
-          this.current.x = 0;
-          this.current.y++;
-        }
-
-        return {
-          done: false,
-          value: {
-            x: this.current.x,
-            y: this.current.y,
-          },
-        };
-      },
-    };
+    return new GridIterator(this);
   }
 }
