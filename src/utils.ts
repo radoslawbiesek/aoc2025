@@ -9,3 +9,12 @@ export function readInput(filename: string, separator = EOL) {
 
   return content.split(separator);
 }
+
+export function range(start: number, end: number): number[] {
+  let r: number[] = [];
+  for (let i = start; i <= end; i++) {
+    r.push(i);
+  }
+
+  return r;
+}

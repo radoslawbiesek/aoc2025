@@ -18,21 +18,24 @@ class Dial {
 
   public rotate(instruction: string): void {
     const { direction, distance } = this.parseInstruction(instruction);
-    const rangeLength = this.end - this.start + 1;
+    const step = direction === "R" ? 1 : -1;
 
-    if (direction === "R") {
-      const diff = this.position + distance;
-      this.position = diff % rangeLength;
-      this.startCount += Math.floor(diff / rangeLength);
-    } else {
-      const startPos = this.position;
-      const diff = this.position - distance;
-      this.position = (rangeLength + (diff % rangeLength)) % rangeLength;
-      if (diff <= 0) {
-        this.startCount +=
-          Math.floor(Math.abs(diff / rangeLength)) +
-          (startPos === this.start ? 0 : 1);
+    let distanceLeft = distance;
+    while (distanceLeft > 0) {
+      const newPosition = this.position + step;
+      if (newPosition < this.start) {
+        this.position = this.end;
+      } else if (newPosition > this.end) {
+        this.position = this.start;
+      } else {
+        this.position = newPosition;
       }
+
+      if (this.position === this.start) {
+        this.startCount++;
+      }
+
+      distanceLeft--;
     }
   }
 }
