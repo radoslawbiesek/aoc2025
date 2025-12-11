@@ -1,4 +1,4 @@
-import { range, readInput } from "../utils.ts";
+import { readInput } from "../utils.ts";
 
 function parseRangeStr(rangeStr: string): [number, number] {
   const [startStr, endStr] = rangeStr.split("-");

@@ -1,5 +1,6 @@
+import { EOL } from "node:os";
+
 type Position = { x: number; y: number };
-type Cell = Position & { value: string };
 
 class GridIterator {
   private x = -1;
@@ -35,9 +36,13 @@ class GridIterator {
 
 export class Grid {
   readonly grid: string[];
+  readonly rows: number;
+  readonly cols: number;
 
   constructor(grid: string[]) {
     this.grid = grid;
+    this.rows = this.grid.length;
+    this.cols = this.grid[0].length;
   }
 
   public get({ x, y }: Position) {
@@ -50,17 +55,103 @@ export class Grid {
     this.grid[y] = updatedRow;
   }
 
-  public getNeighbors({ x, y }: Position): Cell[] {
+  public findOne(value: string): Position | null {
+    for (const pos of this) {
+      if (this.get(pos) === value) {
+        return pos;
+      }
+    }
+
+    return null;
+  }
+
+  public findAll(value: string): Position[] {
+    return [...this].filter((p) => this.get(p) === value);
+  }
+
+  public moveN({ x, y }: Position): Position | null {
+    if (y === 0) {
+      return null;
+    }
+
+    return { x, y: y - 1 };
+  }
+
+  public moveNW({ x, y }: Position): Position | null {
+    if (y === 0 || x === 0) {
+      return null;
+    }
+
+    return { x: x - 1, y: y - 1 };
+  }
+
+  public moveNE({ x, y }: Position): Position | null {
+    if (y === 0 || x === this.cols - 1) {
+      return null;
+    }
+
+    return { x: x + 1, y: y - 1 };
+  }
+
+  public moveW({ x, y }: Position): Position | null {
+    if (x === 0) {
+      return null;
+    }
+
+    return { x: x - 1, y };
+  }
+
+  public moveE({ x, y }: Position): Position | null {
+    if (x === this.cols - 1) {
+      return null;
+    }
+
+    return { x: x + 1, y };
+  }
+
+  public moveS({ x, y }: Position): Position | null {
+    if (y === this.rows - 1) {
+      return null;
+    }
+
+    return { x, y: y + 1 };
+  }
+
+  public moveSW({ x, y }: Position): Position | null {
+    if (y === this.rows - 1 || x === 0) {
+      return null;
+    }
+
+    return { x: x - 1, y: y + 1 };
+  }
+
+  public moveSE({ x, y }: Position): Position | null {
+    if (y === this.rows - 1 || x === this.cols - 1) {
+      return null;
+    }
+
+    return { x: x + 1, y: y + 1 };
+  }
+
+  public getNeighbors(position: Position): Position[] {
     return [
-      { x, y: y - 1, value: this.grid[y - 1]?.[x] }, // N
-      { x: x - 1, y: y - 1, value: this.grid[y - 1]?.[x - 1] }, // NW
-      { x: x + 1, y: y - 1, value: this.grid[y - 1]?.[x + 1] }, // NE
-      { x: x - 1, y, value: this.grid[y][x - 1] }, // W
-      { x: x + 1, y, value: this.grid[y][x + 1] }, // E
-      { x, y: y + 1, value: this.grid[y + 1]?.[x] }, // S
-      { x: x - 1, y: y + 1, value: this.grid[y + 1]?.[x - 1] }, // SW
-      { x: x + 1, y: y + 1, value: this.grid[y + 1]?.[x + 1] }, // SE
-    ].filter(({ value }) => typeof value === "string");
+      this.moveN(position),
+      this.moveNW(position),
+      this.moveNE(position),
+      this.moveW(position),
+      this.moveE(position),
+      this.moveS(position),
+      this.moveSW(position),
+      this.moveSE(position),
+    ].filter((v) => !!v);
+  }
+
+  print() {
+    return this.grid.join(EOL);
+  }
+
+  clone() {
+    return new Grid(structuredClone(this.grid));
   }
 
   [Symbol.iterator]() {
