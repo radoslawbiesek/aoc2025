@@ -1,6 +1,14 @@
 import { EOL } from "node:os";
 
-type Position = { x: number; y: number };
+export class Position {
+  public x: number;
+  public y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
 
 class GridIterator {
   private x = -1;
@@ -46,6 +54,10 @@ export class Grid {
   }
 
   public get({ x, y }: Position) {
+    if (x > this.cols - 1 || y > this.rows - 1) {
+      return null;
+    }
+
     return this.grid[y][x];
   }
 
@@ -146,7 +158,7 @@ export class Grid {
     ].filter((v) => !!v);
   }
 
-  print() {
+  toString() {
     return this.grid.join(EOL);
   }
 
