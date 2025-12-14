@@ -9,64 +9,12 @@ const EMPTY = ".";
 class Present {
   readonly index: number;
   readonly grid: Grid;
-  readonly variants: Grid[];
   readonly area: number;
 
   constructor(index: number, grid: Grid) {
     this.index = index;
     this.grid = grid;
     this.area = this.grid.findAll(SHAPE).length;
-
-    this.variants = this.getAllUniqueVariants(this.grid);
-  }
-
-  private getAllUniqueVariants(grid: Grid): Grid[] {
-    const allVariants = [
-      grid,
-      this.flipVertically(grid),
-      this.flipHorizontally(grid),
-      this.rotate90(grid),
-      this.rotate180(grid),
-      this.rotate270(grid),
-    ];
-
-    const unique: Grid[] = [];
-
-    for (const variant of allVariants) {
-      if (unique.find((g) => g.toString() === variant.toString())) {
-        continue;
-      }
-
-      unique.push(variant);
-    }
-
-    return unique;
-  }
-
-  private flipVertically(grid: Grid): Grid {
-    return new Grid(grid.grid.toReversed());
-  }
-
-  private flipHorizontally(grid: Grid): Grid {
-    return new Grid(grid.grid.map((row) => row.split("").reverse().join("")));
-  }
-
-  private rotate90(grid: Grid): Grid {
-    const newGrid = new Grid(Array(grid.rows).fill(EMPTY.repeat(grid.cols)));
-
-    for (const { x, y } of grid.findAll(SHAPE)) {
-      newGrid.set({ x: y, y: newGrid.rows - 1 - x }, SHAPE);
-    }
-
-    return newGrid;
-  }
-
-  private rotate180(grid: Grid): Grid {
-    return this.rotate90(this.rotate90(grid));
-  }
-
-  private rotate270(grid: Grid): Grid {
-    return this.rotate90(this.rotate90(this.rotate90(grid)));
   }
 }
 
@@ -100,24 +48,14 @@ class Region {
     return true;
   }
 
-  public addPresent(
-    presentIndex: number,
-    presentGrid: Grid,
-    mountPosition: Position
-  ) {
-    // const presentLetter =
-    //   LETTERS[this.currentPresents.reduce((total, next) => next + total, 0)];
-    this.setPresentFields(presentGrid, mountPosition, SHAPE);
-    this.currentPresents[presentIndex]++;
+  public addPresent(present: Present, mountPosition: Position) {
+    this.setPresentFields(present.grid, mountPosition, SHAPE);
+    this.currentPresents[present.index]++;
   }
 
-  public removePresent(
-    presentIndex: number,
-    presentGrid: Grid,
-    mountPosition: Position
-  ) {
-    this.setPresentFields(presentGrid, mountPosition, EMPTY);
-    this.currentPresents[presentIndex]--;
+  public removePresent(present: Present, mountPosition: Position) {
+    this.setPresentFields(present.grid, mountPosition, EMPTY);
+    this.currentPresents[present.index]--;
   }
 
   public isFilled() {
@@ -138,7 +76,19 @@ class Region {
     return remainingPresents;
   }
 
-  get emptyArea(): number {
+  public calculateRemainingPresentsArea(presents: Present[]) {
+    const remainingPresents = this.getRemainingPresents();
+    let total = 0;
+    for (let i = 0; i <= remainingPresents.length - 1; i++) {
+      const count = remainingPresents[i];
+      const present = presents[i];
+      total += count * present.area;
+    }
+
+    return total;
+  }
+
+  public calculateEmptyArea(): number {
     return this.grid.findAll(EMPTY).length;
   }
 
@@ -189,20 +139,6 @@ function parseInput(filename: string) {
   return { presents, regions };
 }
 
-function calculateRemainingPresentsArea(
-  remainingPresents: number[],
-  presents: Present[]
-) {
-  let total = 0;
-  for (let i = 0; i <= remainingPresents.length - 1; i++) {
-    const count = remainingPresents[i];
-    const present = presents[i];
-    total += count * present.area;
-  }
-
-  return total;
-}
-
 function dfs(
   region: Region,
   presents: Present[],
@@ -213,8 +149,8 @@ function dfs(
   }
 
   if (
-    region.emptyArea <
-    calculateRemainingPresentsArea(region.getRemainingPresents(), presents)
+    region.calculateEmptyArea() <
+    region.calculateRemainingPresentsArea(presents)
   ) {
     return false;
   }
@@ -228,20 +164,18 @@ function dfs(
       }
 
       const present = presents[i];
-      for (const variant of present.variants) {
-        if (!region.canAddPresent(variant, mountPosition)) {
-          continue;
-        }
-
-        region.addPresent(i, variant, mountPosition);
-
-        const isFilled = dfs(region, presents, seen);
-        if (isFilled) {
-          return isFilled;
-        }
-
-        region.removePresent(i, variant, mountPosition);
+      if (!region.canAddPresent(present.grid, mountPosition)) {
+        continue;
       }
+
+      region.addPresent(present, mountPosition);
+
+      const isFilled = dfs(region, presents, seen);
+      if (isFilled) {
+        return isFilled;
+      }
+
+      region.removePresent(present, mountPosition);
     }
   }
 
