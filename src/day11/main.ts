@@ -29,7 +29,7 @@ function dfs(
   }
 
   const seenEdge = seen.get(current);
-  if (seenEdge) {
+  if (typeof seenEdge !== "undefined") {
     return seenEdge;
   }
 
@@ -40,7 +40,9 @@ function dfs(
 
   let total = 0;
   for (const edge of edges) {
-    const result = dfs([...path, edge], end, graph, seen);
+    path.push(edge);
+    const result = dfs(path, end, graph, seen);
+    path.pop();
 
     seen.set(edge, result);
 
@@ -58,11 +60,13 @@ export function part1(filename: string) {
   return dfs([start], end, graph, new Map<string, number>());
 }
 
-function calculatePath(path: string[], graph: Graph) {
+function calculatePath(path: string[], filename: string) {
   let total = 1;
   for (let i = 0; i <= path.length - 2; i++) {
     const start = path[i];
     const end = path[i + 1];
+
+    const graph = getGraph(filename);
 
     const result = dfs([start], end, graph, new Map<string, number>());
     console.log(start, "->", end, ":", result);
@@ -76,7 +80,7 @@ function calculatePath(path: string[], graph: Graph) {
 export function part2(filename: string) {
   const graph = getGraph(filename);
   return (
-    calculatePath(["svr", "fft", "dac", "out"], graph) +
-    calculatePath(["svr", "dac", "fft", "out"], graph)
+    calculatePath(["svr", "fft", "dac", "out"], filename) +
+    calculatePath(["svr", "dac", "fft", "out"], filename)
   );
 }
